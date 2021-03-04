@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="/css/all.css" rel="stylesheet" />
+  <link href="/css/bulma.css" rel="stylesheet" />
+  <script src="/js/all.js"></script>
+  <script src="/js/vue.js"></script>
+  <title>My ToDo List</title>
+</head>
+
+<body>
+  <section id="app" :key="ky">
+    <div class="hero-body has-background-primary-dark">
+      <div class="row">
+        <div class="columns">
+          <div class="column is-2">
+            <p class="title ml-6">My ToDo List</p>
+          </div>
+          <div class='column is-1 mr-2'>
+            <div class="control">
+              <span class="icon mr-5 mt-2" style="color:salmon" @click="addNewList()">
+                <i class="fa fa-plus-circle fa-2x"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <!-- <p class="subtitle">Hero subtitle</p> -->
+      </div>
+    </div>
+    <div class="container">
+      <p class="subtitle my-2">Completed: {{completetask}} Incomplete: {{incompletetask}}</p>
+      <p class="subtitle my-2">Flagged: {{flagtask}}</p>
+      <div v-for="(value1,index1) in todoLists">
+        <div class="columns">
+          <div class="column is-8">
+            <div class="columns">
+              <p class="title pt-6">{{value1.name}}</p>
+              <div class="column is-2 mt-6">
+                <span class="icon is-small" @click="editList(value1)">
+                  <i class="fas fa-edit"></i>
+                </span>
+                <span class="icon is-small ml-2" @click="deleteList(value1,index1)">
+                  <i class="fas fa-trash-alt"></i>
+                </span>
+              </div>
+            </div>
+            <template v-for="(value,index) in sortTasks(value1)">
+              <div class="box level py-3 my-2" v-if="value1.id===value.listId" v-show="isFilter(value, value1)">
+                <div class="control">
+                  <div class="columns">
+                    <div class="column is-12" :style="textcolor(value)">
+                      <label class="checkbox"
+                        :style="[value.isComplete ? {'text-decoration': 'line-through'} : {'text-decoration': 'none'}]">
+                        <input type="checkbox" v-model="value.isComplete" @click="checkTask(value)" />
+                        {{value.name}}
+                      </label>
+                      <template v-for="value2 in keepother">
+                        <template v-if="value.id === value2.id">
+                          <label v-if="value2.date">(Due by {{value2.date}})</label>
+                          <span class="icon is-small" v-if="value2.checkflag">
+                            <i class="fa fa-flag"></i>
+                          </span>
+                        </template>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <span class="icon is-small" @click="editTask(value, sendother(value))">
+                    <i class="fas fa-edit"></i>
+                  </span>
+                  <span class="icon is-small ml-5" @click="deleteTask(value,index)">
+                    <i class="fas fa-trash-alt"></i>
+                  </span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+
+          <div class="column is-4 mb-6">
+            <div class="card">
+              <header class="card-header has-background-primary">
+                <p class="card-header-title">Filters</p>
+                <p class="card-header-icon">
+                  <span class="card-header-icon icon">
+                    <i class="fas fa-filter"></i>
+                  </span>
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  <div class="control">
+                    <label class="checkbox">
+                      <input type="checkbox" v-model="checklist(value1).status"
+                        @click="hideFunction(value1, checklist(value1))" />
+                      Hide completed tasks
+                    </label>
+                  </div>
+                  <div class="control">
+                    <label class="checkbox">
+                      <input type="checkbox" v-model="checklist(value1).flag"
+                        @click="showFlag(value1, checklist(value1))" />
+                      Show only flagged tasks
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card mt-2">
+              <header class="card-header has-background-primary">
+                <p class="card-header-title">Sort</p>
+                <p class="card-header-icon">
+                  <span class="card-header-icon icon">
+                    <i class="fas fa-filter"></i>
+                  </span>
+                </p>
+              </header>
+              <div class="card-content">
+                <div class="content">
+                  <div class="control">
+                    <label class="radio">
+                      <input type="radio" value="alpha" v-model="checklist(value1).whichsort"
+                         />
+                      Sort alphabetically
+                    </label>
+                  </div>
+                  <div class="control">
+                    <label class="radio">
+                      <input type="radio" value="incomplete" v-model="checklist(value1).whichsort"
+                         />
+                      Sort incomplete task first
+                    </label>
+                  </div>
+                  <div class="control">
+                    <label class="radio">
+                      <input type="radio" value="flagged" v-model="checklist(value1).whichsort"
+                         />
+                      Sort flagged task first
+                    </label>
+                  </div>
+                  <div class="control">
+                    <label class="radio">
+                      <input type="radio" value="date" v-model="checklist(value1).whichsort"
+                         />
+                      Sort by due date (ascending)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="columns mt-5">
+        <div class="column is-3">
+          <div class="field">
+            <div class="control">
+              <input class="input" type="text" placeholder="Task Name" v-model="inptask" />
+            </div>
+          </div>
+        </div>
+        <div class="column is-2">
+          <div class="select">
+            <select v-model="selectedList">
+              <option hidden disabled selected>--Select list--</option>
+              <option :value='{id: option.id, name: option.name}' v-for="option in todoLists">{{option.name}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-1">
+          <p class="control">
+            <input type="date" v-model="duedate">
+          </p>
+        </div>
+        <div class="column is-1 ml-6">
+          <p class="control">
+            <input type="checkbox" v-model="checkflag" @click="this.checkflag=!this.checkflag"> Flag
+          </p>
+        </div>
+        <div class="column is-1" :key="keycolor">
+          <div class="control">
+            <span class="icon medium" @click="checkcolor= 'black', keycolor++">
+              <i :class="[checkcolor === 'black' ? 'fas fa-check-circle fa-2x mr-6' : 'fas fa-circle fa-2x mr-6']"
+                style="color:black;"></i>
+            </span>
+            <span class="icon medium" @click="checkcolor='red', keycolor++">
+              <i :class="[checkcolor === 'red' ? 'fas fa-check-circle fa-2x mr-5' : 'fas fa-circle fa-2x mr-5']"
+                style="color:red;"></i>
+            </span>
+            <span class="icon medium" @click="checkcolor= 'green', keycolor++">
+              <i :class="[checkcolor === 'green' ? 'fas fa-check-circle fa-2x ml-1' : 'fas fa-circle fa-2x ml-1']"
+                style="color:green;"></i>
+            </span>
+          </div>
+        </div>
+        <div class="column pl-2">
+          <div class="control">
+            <button class="button is-info" @click="addNewTask()">Save</button>
+          </div>
+        </div>
+      </div>
+      <div :class="{modal : true, 'is-active': editisActive }">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Edit Task</p>
+            <button class="delete" aria-label="close" @click="closeEditor()"></button>
+          </header>
+          <section class="modal-card-body">
+            <div class="columns">
+              <div class="column is-9">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" placeholder="Task Name" v-model="inpedittask" />
+                  </div>
+                </div>
+              </div>
+              <div class="column is-3">
+                <div class="select">
+                  <select v-model="selectedList2">
+                    <option hidden disabled selected>{{this.selectedList2}}</option>
+                    <option :value='{id: option.id, name: option.name}' v-for="option in todoLists">{{option.name}}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="columns mt-5">
+              <div class="column is-3 ml-4">
+                <p class="control">
+                  <input type="date" v-model="editduedate">
+                </p>
+              </div>
+              <div class="column is-2 ml-6">
+                <p class="control">
+                  <input type="checkbox" v-model="editcheckflag"> Flag
+                </p>
+              </div>
+              <div class="column is-3" :key="editkeycolor">
+                <div class="control">
+                  <span class="icon medium" @click="editcheckcolor='black', editkeycolor++">
+                    <i :class="[editcheckcolor === 'black' ? 'fas fa-check-circle fa-2x mr-6' : 'fas fa-circle fa-2x mr-6']"
+                      style="color:black;"></i>
+                  </span>
+                  <span class="icon medium" @click="editcheckcolor='red', editkeycolor++">
+                    <i :class="[editcheckcolor === 'red' ? 'fas fa-check-circle fa-2x mr-5' : 'fas fa-circle fa-2x mr-5']"
+                      style="color:red;"></i>
+                  </span>
+                  <span class="icon medium" @click="editcheckcolor= 'green' , editkeycolor++">
+                    <i :class="[editcheckcolor === 'green' ? 'fas fa-check-circle fa-2x ml-1' : 'fas fa-circle fa-2x ml-1']"
+                      style="color:green;"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="column is-1 mr-2">
+                <div class="control">
+                  <button class="button is-info" @click="saveEditor()">Save</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <footer class="modal-card-foot">
+          </footer>
+        </div>
+      </div>
+      <div :class="{modal : true, 'is-active': delisActive }">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-body">
+            <p class="modal-card-title">Are you sure you want to delete "{{deltext}}"?</p>
+          </header>
+          <footer class="modal-card-foot">
+            <button class="button is-danger" @click="del">Confirm</button>
+            <button class="button" @click="cancelDelete">Cancel</button>
+          </footer>
+        </div>
+      </div>
+      <div :class="{modal : true, 'is-active': newListisActive }">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-body">
+            <p class="modal-card-title">New List</p>
+          </header>
+          <section class="modal-card-body">
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <input class="input" type="text" placeholder="List Name" v-model="inputlist" />
+                </div>
+              </div>
+            </div>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-danger" @click="addList">save</button>
+          </footer>
+        </div>
+      </div>
+      <div :class="{modal : true, 'is-active': editListtisActive }">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-body">
+            <p class="modal-card-title">Edit List</p>
+          </header>
+          <section class="modal-card-body">
+            <div class="column">
+              <div class="field">
+                <div class="control">
+                  <input class="input" type="text" placeholder="List Name" v-model="inputeditlist" />
+                </div>
+              </div>
+            </div>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-danger" @click="confirmEditList">save</button>
+          </footer>
+        </div>
+      </div>
+      <div :class="{modal : true, 'is-active': delisActive }">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-body">
+            <p class="modal-card-title">Are you sure you want to delete "{{deltext}}"?</p>
+          </header>
+          <footer class="modal-card-foot">
+            <button class="button is-danger" @click="confirmDeleteList">Confirm</button>
+            <button class="button" @click="cancelDelete">Cancel</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    var app = new Vue({
+      el: "#app",
+      data: {
+        editisActive: false,
+        delisActive: false,
+        newListisActive: false,
+        delListtisActive: false,
+        editListtisActive: false,
+        keepNew: '',
+        inpedittask: '',
+        inptask: '',
+        keepdel: '',
+        keeplist: '',
+        duedate: '',
+        checkflag: false,
+        keepdelindex: 0,
+        keepdelother: 0,
+        keeplistid: 0,
+        hideStatus: false,
+        sortStatus: false,
+        statuscheck: false,
+        selectedList: '--Select list--',
+        selectedList2:'--Select list--',
+        checkcolor: 'black',
+        editcheckcolor: 'black',
+        editcheckflag: false,
+        editduedate: '',
+        inputlist: '',
+        inputeditlist: '',
+        todoLists: [],
+        tasks: [],
+        keepother: [],
+        hideliststatus: [],
+        keepNew2: '',
+        ky: 0,
+        keycolor: 0,
+        editkeycolor: 0,
+        taskid: 1,
+        listid: 1,
+      },
+      methods: {
+        addNewTask() {
+          var newId = this.taskid++
+          var tsk = {
+            id: newId,
+            name: this.inptask,
+            isComplete: false,
+            listId: this.selectedList.id
+          }
+          var other = {
+            id: tsk.id,
+            date: this.duedate,
+            checkflag: this.checkflag,
+            color: this.checkcolor,
+            hide: false,
+            hasflag: this.checkflag,
+            listname : this.selectedList.name /////////////
+          }
+          if (tsk.name != "") {
+            if(this.selectedList!="--Select list--"){
+            this.tasks.push(tsk)
+            this.keepother.push(other)
+            this.inptask = "",
+              this.selectedList = "--Select list--",
+              this.duedate = "",
+              this.checkflag = false,
+              this.checkcolor = "black"
+            this.keycolor++
+            this.ky++
+            }else{
+              alert("CHOOSE LIST")
+            }
+          } else {
+            alert("INPUT TASK NAME")
+          }
+        },
+        checkTask(value) {
+          value.isComplete = !value.isComplete
+          for (var i of this.keepother) {
+            if (i.id === value.id) {
+              i.hide = value.isComplete
+              this.ky++
+              console.log("edit")
+            }
+          }
+        },
+        editTask(task, other) {
+          this.editisActive = !this.editisActive
+          this.keepNew = task
+          this.keepNew2 = other
+          this.editcheckflag = this.keepNew2.checkflag
+          this.editduedate = this.keepNew2.date
+          this.editcheckcolor = this.keepNew2.color
+          this.inpedittask = this.keepNew.name
+          // for(var i of this.todoLists){
+          //   if(this.keepNew2.listname === i.id){
+          //     var nn = i.name
+          //     this.selectedList2 = nn
+          //     console.log(nn)
+          //     console.log(this.selectedList2)
+          //     this.ky++
+          //   }
+          // }
+          this.selectedList2 = this.keepNew2.listname
+          this.editkeycolor++
+        },
+        saveEditor() {
+          console.log("save")
+          if (this.keepNew.name != '') {
+            for (var i of this.tasks) {
+              if (i.id === this.keepNew.id) {
+                if (this.inpedittask != '') {
+                  i.name = this.inpedittask
+                  i.listId = this.selectedList2.id
+                  this.editisActive = false
+                } else {
+                  alert("INPUT TASKNAME")
+                }
+              }
+            }
+            for (var j of this.keepother) {
+              if (j.id === this.keepNew2.id) {
+                j.date = this.editduedate
+                j.checkflag = this.editcheckflag
+                j.color = this.editcheckcolor
+                j.hasflag = j.checkflag = this.editcheckflag
+                j.listname = this.selectedList2.name
+              }
+            }
+          }
+        },
+        cancelEditor() {
+          this.editisActive = false
+        },
+        closeEditor() {
+          this.editisActive = false
+        },
+        deleteTask(value, index) {
+          console.log("delete")
+          var countindex = 0
+          this.delisActive = !this.delisActive
+          this.keepdel = value.name
+          this.keepdelindex = index
+          for (var i of this.keepother) {
+            if (value.id === i.id) {
+              this.keepdelother = countindex
+            } else {
+              countindex++
+            }
+          }
+
+        },
+        del() {
+          this.delisActive = false
+          this.tasks.splice(this.keepdelindex, 1)
+          this.keepother.splice(this.keepdelother, 1)
+        },
+        cancelDelete() {
+          this.delisActive = false
+        },
+        closeDelete() {
+          this.delisActive = false
+        },
+        sortFucntion(value) {
+          setTimeout(() => {
+          }, 10)
+        },
+        hideFunction(value, checklist) {
+          checklist.status = !checklist.status
+          if (checklist.status) {
+            for (var i of this.tasks) {
+              if (i.listId === value.id) {
+                if (i.isComplete) {
+                  for (var j of this.keepother) {
+                    if (i.id === j.id) {
+                      j.hide = true
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            for (var i of this.tasks) {
+              if (i.listId === value.id) {
+                if (i.isComplete) {
+                  for (var j of this.keepother) {
+                    if (i.id === j.id) {
+                      j.hide = false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        isFilter(value, value1) {
+          if (this.checklist(value1).status === true && this.checklist(value1).flag === false) {
+            for (var i of this.keepother) {
+              if (i.id === value.id) {
+                if (i.hide === true) {
+                  return false
+                } else {
+                  return true
+                }
+              }
+            }
+          } else if (this.checklist(value1).status === false && this.checklist(value1).flag === false) {
+            return true
+          } else if (this.checklist(value1).status === false && this.checklist(value1).flag === true) {
+            for (var i of this.keepother) {
+              if (i.id === value.id) {
+                if (i.hasflag === true) {
+                  return true
+                } else {
+                  return false
+                }
+              }
+            }
+          } else {
+            for (var i of this.keepother) {
+              if (i.id === value.id) {
+                if (i.hasflag === true && i.hide === false) {
+                  return true
+                } else {
+                  return false
+                }
+              }
+            }
+          }
+        },
+        showFlag(value, checklist) {
+          checklist.flag = !checklist.flag
+          if (checklist.flag) {
+            for (var i of this.tasks) {
+              if (i.listId === value.id) {
+                for (var j of this.keepother) {
+                  if (i.id === j.id) {
+                    if (j.checkflag) {
+                      j.hasflag = true
+                    }
+                  }
+                }
+
+              }
+            }
+          } else {
+            for (var i of this.tasks) {
+              if (i.listId === value.id) {
+                for (var j of this.keepother) {
+                  if (i.id === j.id) {
+                    if (j.checkflag) {
+                      j.hasflag = false
+                    }
+                  }
+                }
+
+              }
+            }
+          }
+        },
+        checklist(value) {
+          for (var i of this.hideliststatus) {
+            if (value.id === i.id) {
+              return i
+            }
+          }
+        },
+        check(value) {
+          for (var i of this.keepother) {
+            if (value.id === i.id) {
+              return i
+            }
+          }
+        },
+        addNewList() {
+          this.newListisActive = true
+        },
+        addList() {
+          var newId = this.listid++
+          var lst = {
+            id: newId,
+            name: this.inputlist,
+
+          }
+          var stat = {
+            id: newId,
+            status: false,
+            flag: false,
+            whichsort: "alpha"
+          }
+          if (lst.name != "") {
+            this.todoLists.push(lst)
+            this.hideliststatus.push(stat)
+            this.inputlist = ""
+            this.newListisActive = false
+          } else {
+            alert("INPUT LIST NAME")
+          }
+        },
+        editList(list) {
+          this.editListtisActive = true
+          this.keepList = list
+          this.inputeditlist = this.keepList.name
+          this.keepListId = this.keepList.id
+        },
+        deleteList(value, index) {
+          console.log("deletelist")
+          this.delisActive = !this.delisActive
+          this.keepdel = value.name
+          this.keeplistid = value.id
+          this.keepdelindex = index
+
+        },
+        confirmEditList() {
+          if (this.keepList.name != '') {
+            for (var i of this.todoLists) {
+              if (i.id === this.keepList.id) {
+                if (this.inputeditlist != '') {
+                  i.name = this.inputeditlist
+                  this.editListtisActive = false
+                } else {
+                  alert("INPUT LISTNAME")
+                }
+              }
+            }
+          }
+        },
+        confirmDeleteList() {
+          this.delisActive = false
+          for (var i of this.hideliststatus) {
+            if (i.id === this.todoLists[this.keepdelindex].id) {
+              this.hideliststatus.splice(this.hideliststatus.indexOf(i), 1)
+            }
+          }
+          this.todoLists.splice(this.keepdelindex, 1)
+          for (var i = 0; i < this.tasks.length; i++) {
+            var countindex = 0
+            if (this.tasks[i].listId === this.keeplistid) {
+              for (var j of this.keepother) {
+                if (this.tasks[i].id === j.id) {
+                  this.keepdelother = countindex
+                } else {
+                  countindex++
+                }
+              }
+              var ind = this.tasks.indexOf(this.tasks[i])
+              this.keepother.splice(this.keepdelother, 1)
+              this.tasks.splice(ind, 1)
+              i--
+            }
+          }
+
+        },
+        textcolor(task) {
+          for (var i of this.keepother) {
+            if (i.id === task.id) {
+              return {
+                'color': i.color
+              }
+            }
+          }
+        },
+        sendother(task) {
+          for (var i of this.keepother) {
+            if (i.id === task.id) {
+              return i
+            }
+          }
+        },
+        sortTasks(value1) {
+          var tasks = this.tasks.slice()
+          var keep = this.checklist(value1)
+          var keepid = keep.id
+          if (keep.whichsort === "alpha") {
+            tasks.sort(function (a, b) {
+              if (a.name < b.name) {
+                return -1
+              } if (a.name > b.name) {
+                return 1
+              }
+              return 0
+
+            })
+            return tasks
+          } if (keep.whichsort === "incomplete") {
+            tasks.sort(function (a, b) {
+              if (a.isComplete === true && b.isComplete === false) {
+                return 1
+              } if (a.isComplete === false && b.isComplete === true) {
+                return -1
+              }
+              return 0
+
+            })
+            return tasks
+          } if (keep.whichsort === "flagged") {
+            tasks.sort((a, b) => {
+              if (this.check(a).checkflag === true && this.check(b).checkflag === false) {
+                return -1
+              } else {
+                return 1
+              }
+              return 0
+
+            })
+            return tasks
+          } if (keep.whichsort === "date") {
+            tasks.sort((a, b) => {
+              if (this.check(b).date === "") {
+                return -1
+              }
+              if (this.check(a).date < this.check(b).date &&this.check(a).date!="") {
+                console.log('a<b')
+                return -1
+              } if (this.check(a).date > this.check(b).date  &&this.check(a).date!="") {
+                console.log('a>b')
+                return 1
+              } 
+              return 0
+            })
+            return tasks
+          }
+
+        },
+      },
+      computed: {
+        deltext() {
+          return this.keepdel
+        },
+        completetask() {
+          var ccomplete = 0
+          for (var i of this.tasks) {
+            if (i.isComplete === true) {
+              ccomplete += 1
+            }
+          }
+          return ccomplete
+        },
+        incompletetask() {
+          var incomplete = 0
+          for (var i of this.tasks) {
+            if (i.isComplete === false) {
+              incomplete += 1
+            }
+          }
+          return incomplete
+        },
+        flagtask() {
+          var task = 0
+          for (var i of this.keepother) {
+            if (i.checkflag === true) {
+              task += 1
+            }
+          }
+          return task
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
