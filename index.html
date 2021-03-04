@@ -319,7 +319,7 @@
           </footer>
         </div>
       </div>
-      <div :class="{modal : true, 'is-active': delisActive }">
+      <div :class="{modal : true, 'is-active': delListisActive }">
         <div class="modal-background"></div>
         <div class="modal-card">
           <header class="modal-card-body">
@@ -340,7 +340,7 @@
         editisActive: false,
         delisActive: false,
         newListisActive: false,
-        delListtisActive: false,
+        delListisActive: false,
         editListtisActive: false,
         keepNew: '',
         inpedittask: '',
@@ -488,6 +488,7 @@
         },
         del() {
           this.delisActive = false
+          console.log("del")
           this.tasks.splice(this.keepdelindex, 1)
           this.keepother.splice(this.keepdelother, 1)
         },
@@ -641,7 +642,7 @@
         },
         deleteList(value, index) {
           console.log("deletelist")
-          this.delisActive = !this.delisActive
+          this.delListisActive = !this.delListisActive
           this.keepdel = value.name
           this.keeplistid = value.id
           this.keepdelindex = index
@@ -662,7 +663,7 @@
           }
         },
         confirmDeleteList() {
-          this.delisActive = false
+          this.delListisActive = false
           for (var i of this.hideliststatus) {
             if (i.id === this.todoLists[this.keepdelindex].id) {
               this.hideliststatus.splice(this.hideliststatus.indexOf(i), 1)
