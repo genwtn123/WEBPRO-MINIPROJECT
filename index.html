@@ -124,29 +124,25 @@
                 <div class="content">
                   <div class="control">
                     <label class="radio">
-                      <input type="radio" value="alpha" v-model="checklist(value1).whichsort"
-                         />
+                      <input type="radio" value="alpha" v-model="checklist(value1).whichsort" />
                       Sort alphabetically
                     </label>
                   </div>
                   <div class="control">
                     <label class="radio">
-                      <input type="radio" value="incomplete" v-model="checklist(value1).whichsort"
-                         />
+                      <input type="radio" value="incomplete" v-model="checklist(value1).whichsort" />
                       Sort incomplete task first
                     </label>
                   </div>
                   <div class="control">
                     <label class="radio">
-                      <input type="radio" value="flagged" v-model="checklist(value1).whichsort"
-                         />
+                      <input type="radio" value="flagged" v-model="checklist(value1).whichsort" />
                       Sort flagged task first
                     </label>
                   </div>
                   <div class="control">
                     <label class="radio">
-                      <input type="radio" value="date" v-model="checklist(value1).whichsort"
-                         />
+                      <input type="radio" value="date" v-model="checklist(value1).whichsort" />
                       Sort by due date (ascending)
                     </label>
                   </div>
@@ -224,7 +220,8 @@
                 <div class="select">
                   <select v-model="selectedList2">
                     <option hidden disabled selected>{{this.selectedList2}}</option>
-                    <option :value='{id: option.id, name: option.name}' v-for="option in todoLists">{{option.name}}</option>
+                    <option :value='{id: option.id, name: option.name}' v-for="option in todoLists">{{option.name}}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -327,7 +324,7 @@
           </header>
           <footer class="modal-card-foot">
             <button class="button is-danger" @click="confirmDeleteList">Confirm</button>
-            <button class="button" @click="cancelDelete">Cancel</button>
+            <button class="button" @click="delListisActive = false">Cancel</button>
           </footer>
         </div>
       </div>
@@ -356,7 +353,7 @@
         sortStatus: false,
         statuscheck: false,
         selectedList: '--Select list--',
-        selectedList2:'--Select list--',
+        selectedList2: '--Select list--',
         checkcolor: 'black',
         editcheckcolor: 'black',
         editcheckflag: false,
@@ -390,20 +387,20 @@
             color: this.checkcolor,
             hide: false,
             hasflag: this.checkflag,
-            listname : this.selectedList.name /////////////
+            listname: this.selectedList.name /////////////
           }
           if (tsk.name != "") {
-            if(this.selectedList!="--Select list--"){
-            this.tasks.push(tsk)
-            this.keepother.push(other)
-            this.inptask = "",
-              this.selectedList = "--Select list--",
-              this.duedate = "",
-              this.checkflag = false,
-              this.checkcolor = "black"
-            this.keycolor++
-            this.ky++
-            }else{
+            if (this.selectedList != "--Select list--") {
+              this.tasks.push(tsk)
+              this.keepother.push(other)
+              this.inptask = "",
+                this.selectedList = "--Select list--",
+                this.duedate = "",
+                this.checkflag = false,
+                this.checkcolor = "black"
+              this.keycolor++
+              this.ky++
+            } else {
               alert("CHOOSE LIST")
             }
           } else {
@@ -437,7 +434,7 @@
           //     this.ky++
           //   }
           // }
-          this.selectedList2 = this.keepNew2.listname
+          this.selectedList2 = "--Select list--"
           this.editkeycolor++
         },
         saveEditor() {
@@ -445,24 +442,25 @@
           if (this.keepNew.name != '') {
             for (var i of this.tasks) {
               if (i.id === this.keepNew.id) {
-                if (this.inpedittask != '') {
+                if (this.inpedittask != '' && this.selectedList2 != "--Select list--") {
                   i.name = this.inpedittask
                   i.listId = this.selectedList2.id
+                  for (var j of this.keepother) {
+                    if (j.id === this.keepNew2.id) {
+                      j.date = this.editduedate
+                      j.checkflag = this.editcheckflag
+                      j.color = this.editcheckcolor
+                      j.hasflag = j.checkflag = this.editcheckflag
+                      j.listname = this.selectedList2.name
+                    }
+                  }
                   this.editisActive = false
                 } else {
                   alert("INPUT TASKNAME")
                 }
               }
             }
-            for (var j of this.keepother) {
-              if (j.id === this.keepNew2.id) {
-                j.date = this.editduedate
-                j.checkflag = this.editcheckflag
-                j.color = this.editcheckcolor
-                j.hasflag = j.checkflag = this.editcheckflag
-                j.listname = this.selectedList2.name
-              }
-            }
+
           }
         },
         cancelEditor() {
@@ -474,9 +472,19 @@
         deleteTask(value, index) {
           console.log("delete")
           var countindex = 0
+          var countindex1 = 0
           this.delisActive = !this.delisActive
           this.keepdel = value.name
           this.keepdelindex = index
+          for (var i of this.tasks) {
+            if (value.id === i.id) {
+              this.keepdelindex = countindex1
+            } else {
+              countindex1++
+            }
+          }
+          console.log(this.keepdelindex)
+
           for (var i of this.keepother) {
             if (value.id === i.id) {
               this.keepdelother = countindex
@@ -686,6 +694,7 @@
               i--
             }
           }
+          this.selectedList = '--Select list--'
 
         },
         textcolor(task) {
@@ -746,13 +755,13 @@
               if (this.check(b).date === "") {
                 return -1
               }
-              if (this.check(a).date < this.check(b).date &&this.check(a).date!="") {
+              if (this.check(a).date < this.check(b).date && this.check(a).date != "") {
                 console.log('a<b')
                 return -1
-              } if (this.check(a).date > this.check(b).date  &&this.check(a).date!="") {
+              } if (this.check(a).date > this.check(b).date && this.check(a).date != "") {
                 console.log('a>b')
                 return 1
-              } 
+              }
               return 0
             })
             return tasks
